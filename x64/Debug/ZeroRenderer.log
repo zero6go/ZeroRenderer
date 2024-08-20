@@ -1,0 +1,147 @@
+﻿  main.cpp
+D:\workspace\ZeroRenderer\tgaimage.h(60,59): warning C4244: “=”: 从“float”转换到“unsigned char”，可能丢失数据
+D:\workspace\ZeroRenderer\shader.h(25,54): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(25,35): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(26,54): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(26,35): warning C4244: “参数”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(84,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(85,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(87,56): warning C4244: “=”: 从“const _Ty”转换到“unsigned char”，可能丢失数据
+          with
+          [
+              _Ty=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(126,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(127,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(130,56): warning C4244: “=”: 从“const _Ty”转换到“unsigned char”，可能丢失数据
+          with
+          [
+              _Ty=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(167,1): warning C4305: “=”: 从“double”到“float”截断
+D:\workspace\ZeroRenderer\shader.h(168,1): warning C4305: “=”: 从“double”到“float”截断
+D:\workspace\ZeroRenderer\shader.h(169,1): warning C4305: “=”: 从“double”到“float”截断
+D:\workspace\ZeroRenderer\shader.h(170,1): warning C4305: “=”: 从“double”到“float”截断
+D:\workspace\ZeroRenderer\shader.h(220,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(221,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(243,24): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+D:\workspace\ZeroRenderer\shader.h(245,32): warning C4244: “=”: 从“const _Ty”转换到“unsigned char”，可能丢失数据
+          with
+          [
+              _Ty=float
+          ]
+D:\workspace\ZeroRenderer\shader.h(294,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(295,30): warning C4244: “+=”: 从“T”转换到“T”，可能丢失数据
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              T=int
+          ]
+D:\workspace\ZeroRenderer\shader.h(319,24): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+D:\workspace\ZeroRenderer\shader.h(321,32): warning C4244: “=”: 从“const _Ty”转换到“unsigned char”，可能丢失数据
+          with
+          [
+              _Ty=float
+          ]
+D:\workspace\ZeroRenderer\main.cpp(13,29): warning C4305: “参数”: 从“double”到“T”截断
+          with
+          [
+              T=float
+          ]
+D:\workspace\ZeroRenderer\main.cpp(14,26): warning C4305: “参数”: 从“double”到“T”截断
+          with
+          [
+              T=float
+          ]
+  ZeroRenderer.vcxproj -> D:\workspace\ZeroRenderer\x64\Debug\ZeroRenderer.exe
