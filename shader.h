@@ -1,7 +1,11 @@
 #pragma once
 
-#include "geometry.h"
+#include <Eigen/Dense>
 #include "tgaimage.h"
+
+typedef Eigen::Matrix4f Matrix;
+typedef Eigen::Vector3f Vec3f;
+typedef Eigen::Vector2i Vec2i;
 
 class Shader {
 public:
@@ -11,39 +15,39 @@ public:
 	virtual bool fragment(Vec3f bc, TGAColor& color) = 0;
 
 	Vec3f mvp(Matrix Viewport, Matrix Projection, Matrix View, Vec3f ModelVertex) {
-		mat<4, 1, float> matv;
-		matv[3][0] = 1.0f;
-		for (int i = 0; i < 3; i++) matv[i][0] = ModelVertex[i];
-		mat<4, 1, float> m = Viewport * Projection * View * matv;
-		return Vec3f(m[0][0] / m[3][0], m[1][0] / m[3][0], m[2][0] / m[3][0]);
+		Eigen::Matrix<float, 4, 1> matv;
+		matv(3, 0) = 1.0f;
+		for (int i = 0; i < 3; i++) matv(i, 0) = ModelVertex[i];
+        Eigen::Matrix<float, 4, 1> m = Viewport * Projection * View * matv;
+		return Vec3f(m(0, 0) / m(3, 0), m(1, 0) / m(3, 0), m(2, 0) / m(3, 0));
 	}
     //计算TBN逆矩阵
-    mat<3, 3, float> tbn(Vec3f* v, Vec2i* uv, Vec3f n) {
+    Eigen::Matrix3f tbn(Vec3f* v, Vec2i* uv, Vec3f n) {
         Vec3f AB = v[1] - v[0];
         Vec3f AC = v[2] - v[0];
 
-        Vec3f uv1 = Vec3f(uv[1].x - uv[0].x, uv[1].y - uv[0].y, 0);
-        Vec3f uv2 = Vec3f(uv[2].x - uv[0].x, uv[2].y - uv[0].y, 0);
+        Vec3f uv1 = Vec3f(uv[1].x() - uv[0].x(), uv[1].y() - uv[0].y(), 0);
+        Vec3f uv2 = Vec3f(uv[2].x() - uv[0].x(), uv[2].y() - uv[0].y(), 0);
 
         Vec3f T = (AB * uv2[1] - AC * uv1[1]) / (uv1[0] * uv2[1] - uv2[0] * uv1[1]);
         Vec3f B = (AC * uv1[0] - AB * uv2[0]) / (uv1[0] * uv2[1] - uv2[0] * uv1[1]);
         Vec3f q, w;
         for (int i = 0; i < 3; i++) {
-            q[i] = (T * n) * n[i];
+            q[i] = (T.dot(n)) * n[i];
         }
         Vec3f t = T - q;
         t.normalize();
         for (int i = 0; i < 3; i++) {
-            q[i] = (B * n) * n[i];
-            w[i] = (B * t) * t[i];
+            q[i] = (B.dot(n)) * n[i];
+            w[i] = (B.dot(t)) * t[i];
         }
         Vec3f b = B - q - w;
         b.normalize();
-        mat<3, 3, float> TBN;
+        Eigen::Matrix3f TBN;
         for (int i = 0; i < 3; i++) {
-            TBN[i][0] = t[i];
-            TBN[i][1] = b[i];
-            TBN[i][2] = n[i];
+            TBN(i, 0) = t[i];
+            TBN(i, 1) = b[i];
+            TBN(i, 2) = n[i];
         }
         return TBN;
     }
@@ -63,7 +67,7 @@ public:
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
-        this->lightDir = lightDir.normalize();
+        this->lightDir = lightDir.normalized();
         this->texture = texture;
     }
 
@@ -76,15 +80,15 @@ public:
         return gl_Pos;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
-        Vec3f normal = cross((v[1] - v[0]), (v[2] - v[0]));
+        Vec3f normal = (v[1] - v[0]).cross(v[2] - v[0]);
         normal.normalize();
-        Vec2i uvP;
-        float intensityP = -(lightDir * normal);
+        Vec2i uvP(0, 0);
+        float intensityP = -(lightDir.dot(normal));
         for (int i = 0; i < 3; i++) {
-            uvP.x += uv[i].x * bc[i];
-            uvP.y += uv[i].y * bc[i];
+            uvP.x() += uv[i].x() * bc[i];
+            uvP.y() += uv[i].y() * bc[i];
         }
-        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x, uvP.y)[i] * intensityP);
+        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP);
         return false ? intensityP > 0:intensityP <= 0;
     }
 };
@@ -103,7 +107,7 @@ public:
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
-        this->lightDir = lightDir.normalize();
+        this->lightDir = lightDir.normalized();
         this->texture = texture;
     }
 
@@ -118,16 +122,16 @@ public:
     bool fragment(Vec3f bc, TGAColor& color) {
         float intensity[3];
         for (int i = 0; i < 3; i++) {
-            intensity[i] = -(lightDir * normal[i]);
+            intensity[i] = -(lightDir.dot(normal[i]));
         }
-        Vec2i uvP;
+        Vec2i uvP(0, 0);
         float intensityP = 0.0f;
         for (int i = 0; i < 3; i++) {
-            uvP.x += uv[i].x * bc[i];
-            uvP.y += uv[i].y * bc[i];
+            uvP.x() += uv[i].x() * bc[i];
+            uvP.y() += uv[i].y() * bc[i];
             intensityP += intensity[i] * bc[i];
         }
-        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x, uvP.y)[i] * intensityP);
+        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP);
         return false ? intensityP > 0:intensityP <= 0;
     }
 };
@@ -145,7 +149,7 @@ public:
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
-        this->lightDir = lightDir.normalize();
+        this->lightDir = lightDir.normalized();
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
@@ -160,7 +164,7 @@ public:
         float intensity[3];
         float intensityP = 0;
         for (int i = 0; i < 3; i++) {
-            intensity[i] = -(normal[i] * lightDir);
+            intensity[i] = -(normal[i].dot(lightDir));
             intensityP += intensity[i] * bc[i];
         }
         if (intensityP > .85) intensityP = 1;
@@ -194,10 +198,10 @@ public:
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
-        this->lightDir = lightDir.normalize();
+        this->lightDir = lightDir.normalized();
         this->texture = texture;
         this->ambient = ambient;
-        this->viewDir = viewDir.normalize();
+        this->viewDir = viewDir.normalized();
         this->specularMap = specularMap;
         this->shininess = shininess;
         this->normalMap = normalMap;
@@ -214,18 +218,18 @@ public:
     }
     bool fragment(Vec3f bc, TGAColor& color) {
         Vec3f normalP;
-        Vec2i uvP;
-        Vec3f n;
+        Vec2i uvP(0, 0);
+        Vec3f n(0, 0, 0);
         for (int i = 0; i < 3; i++) {
-            uvP.x += uv[i].x * bc[i];
-            uvP.y += uv[i].y * bc[i];
+            uvP.x() += uv[i].x() * bc[i];
+            uvP.y() += uv[i].y() * bc[i];
 
             //插值获得当前像素法向量
-            n.x += normal[i].x * bc[i];
-            n.y += normal[i].y * bc[i];
-            n.z += normal[i].z * bc[i];
+            n.x() += normal[i].x() * bc[i];
+            n.y() += normal[i].y() * bc[i];
+            n.z() += normal[i].z() * bc[i];
         }
-        mat<3, 3, float> TBN = tbn(v, uv, n);
+        Eigen::Matrix3f TBN = tbn(v, uv, n);
         //法线贴图rgb分别保存法线向量xyz
         TGAColor c = normalMap.get(uvP[0], uvP[1]);
         for (int i = 0; i < 3; i++)
@@ -235,14 +239,14 @@ public:
         normalP = TBN * normalP;
         normalP.normalize();
 
-        float diffuse = -(normalP * lightDir);
+        float diffuse = -(normalP.dot(lightDir));
         if (diffuse < 0) return true;
 
-        Vec3f reflectDir =normalP * (normalP * lightDir * 2) - lightDir;
+        Vec3f reflectDir = normalP * (normalP.dot(lightDir) * 2) - lightDir;
         reflectDir.normalize();
-        float specular = 0.6 * pow(std::max(0.0f, reflectDir * viewDir), shininess);
+        float specular = 0.6 * pow(std::max(0.0f, reflectDir.dot(viewDir)), shininess);
         for (int i = 0; i < 3; i++)
-            color[i] = std::min(255.0f, texture.get(uvP.x, uvP.y)[i] * (ambient + diffuse) + specularMap.get(uvP.x, uvP.y)[i] * specular);
+            color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse) + specularMap.get(uvP.x(), uvP.y())[i] * specular);
         return false;
     }
 };
@@ -268,10 +272,10 @@ public:
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
-        this->lightDir = lightDir.normalize();
+        this->lightDir = lightDir.normalized();
         this->texture = texture;
         this->ambient = ambient;
-        this->viewDir = viewDir.normalize();
+        this->viewDir = viewDir.normalized();
         this->specularMap = specularMap;
         this->shininess = shininess;
         this->normalMap = normalMap;
@@ -288,19 +292,19 @@ public:
     }
     bool fragment(Vec3f bc, TGAColor& color) {
         Vec3f normalP;
-        Vec2i uvP;
-        Vec3f n;
+        Vec2i uvP(0, 0);
+        Vec3f n(0, 0, 0);
         for (int i = 0; i < 3; i++) {
-            uvP.x += uv[i].x * bc[i];
-            uvP.y += uv[i].y * bc[i];
+            uvP.x() += uv[i].x() * bc[i];
+            uvP.y() += uv[i].y() * bc[i];
 
             //插值获得当前像素法向量
-            n.x += normal[i].x * bc[i];
-            n.y += normal[i].y * bc[i];
-            n.z += normal[i].z * bc[i];
+            n.x() += normal[i].x() * bc[i];
+            n.y() += normal[i].y() * bc[i];
+            n.z() += normal[i].z() * bc[i];
         }
         
-        mat<3, 3, float> TBN = tbn(v, uv, n);
+        Eigen::Matrix3f TBN = tbn(v, uv, n);
         
         //法线贴图rgb分别保存法线向量xyz
         TGAColor c = normalMap.get(uvP[0], uvP[1]);
@@ -311,14 +315,14 @@ public:
         normalP = TBN * n;
         normalP.normalize();
 
-        float diffuse = -(normalP * lightDir);
+        float diffuse = -(normalP.dot(lightDir));
         if (diffuse < 0) return true;
 
         //引入view和light夹角一半的方向向量，避免Phong模型反射光与视线夹角大于90度导致高光不连续的情况
-        Vec3f half = (lightDir + viewDir).normalize();
-        float specular = 0.5 * pow(std::max(0.0f, -(half * normalP)), shininess);
+        Vec3f half = (lightDir + viewDir).normalized();
+        float specular = 0.5 * pow(std::max(0.0f, -(half.dot(normalP))), shininess);
         for (int i = 0; i < 4; i++)
-            color[i] = std::min(255.0f, texture.get(uvP.x, uvP.y)[i] * (ambient + diffuse) + specularMap.get(uvP.x, uvP.y)[i] * specular);
+            color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse) + specularMap.get(uvP.x(), uvP.y())[i] * specular);
         return false;
     }
 };

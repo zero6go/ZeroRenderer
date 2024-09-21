@@ -38,7 +38,7 @@ Model::Model(std::string filename) : verts_(), faces_(), norms_(), uv_(), diffus
             Vec3i tmp;
             iss >> trash;
             while (iss >> tmp[0] >> trash >> tmp[1] >> trash >> tmp[2]) {
-                for (int i = 0; i < 3; i++) tmp[i]--; // in wavefront obj all indices start at 1, not zero
+                for (int i = 0; i < 3; i++) tmp[i]--; 
                 f.push_back(tmp);
             }
             faces_.push_back(f);
@@ -95,10 +95,10 @@ TGAImage Model::getNormal() {
 
 Vec2i Model::uv(int idxface, int idxvert) {
     int idx = faces_[idxface][idxvert][1];
-    return Vec2i(uv_[idx].x * diffusemap_.get_width(), uv_[idx].y * diffusemap_.get_height());
+    return Vec2i(uv_[idx].x() * diffusemap_.get_width(), uv_[idx].y() * diffusemap_.get_height());
 }
 
 Vec3f Model::normal(int idxface, int idxvert) {
     int idx = faces_[idxface][idxvert][2];
-    return norms_[idx].normalize();
+    return norms_[idx].normalized();
 }

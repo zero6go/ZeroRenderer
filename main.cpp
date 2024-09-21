@@ -7,8 +7,8 @@
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red = TGAColor(255, 0, 0, 255);
 const TGAColor green = TGAColor(0, 255, 0, 255);
-const int width = 2048;
-const int height = 2048;
+const int width = 2000;
+const int height = 2000;
 Model* model = nullptr;
 Vec3f lightDir(0.3, -0.7, -1);
 Vec3f camera(0.25, 0.3, 2);
@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
             }
             triangleBoundingBox(screenCoords, shader, image, zbuffer);
         }
+        std::cout << "Completed!" << std::endl;
     }
 
     image.flip_vertically();
