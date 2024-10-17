@@ -37,8 +37,7 @@ private:
     std::vector<Model*> models;
     Vec3f lightDir = Vec3f(0.3, -0.7, -1);
     Vec3f camera = Vec3f(0.3, 0.3, 2);
-    Vec3f center = Vec3f(0, 0, 0);
-    Vec3f viewDir = center - camera;
+    Vec3f viewDir = Vec3f(0, 0, -1);
     float ambient = 0.1f;
     float near = -0.1f;
     float far = -100.0f;

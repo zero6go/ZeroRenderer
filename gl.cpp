@@ -1,5 +1,5 @@
 #include "gl.h"
-
+#include <iostream>
 Matrix getViewport(int w, int h) {
     Matrix m = Matrix::Identity();
     m(0, 3) = w / 2.0;
@@ -32,8 +32,8 @@ Matrix getProjection(float aspect, float fov, float near, float far) {
     return projection;
 }
 
-Matrix getView(Vec3f camera, Vec3f center, Vec3f up) {
-    Vec3f z = camera - center;
+Matrix getView(Vec3f camera, Vec3f viewDir, Vec3f up) {
+    Vec3f z = -viewDir;
     Vec3f x;
     if(z.x() == 0 && z.z() == 0){
         x = Vec3f(1, 0, 0);
@@ -122,7 +122,12 @@ Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
 }
 
 void triangleBoundingBox(Vec3f* verts, Shader& shader, TGAImage& image, float* zbuffer) {
-    Vec2f bboxmin(image.get_width(), image.get_height());
+    for (int i = 0; i < 3; i++){
+        if (verts[i].z() < -1){
+            return;
+        }
+    }
+    Vec2f bboxmin(image.get_width() - 1, image.get_height() - 1);
     Vec2f bboxmax(0.0f, 0.0f);
     for (int i = 0; i < 3; i++) {
         bboxmin.x() = std::max(0.0f, std::min(verts[i].x(), bboxmin.x()));

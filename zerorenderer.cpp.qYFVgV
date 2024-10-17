@@ -26,64 +26,52 @@ ZeroRenderer::ZeroRenderer(QWidget *parent)
         container->setLayout(layout);
 
         //分辨率
-        QLabel *Alabel0 = new QLabel("分辨率(0~1000)：");
-        QLineEdit *Aline0 = new QLineEdit();
-        Aline0->setText(QString::number(width() - 300));
-        QLineEdit *Aline1 = new QLineEdit();
-        Aline1->setText(QString::number(height() - 30));
+        QLabel *label0 = new QLabel("分辨率(0~1000)：");
+        QLineEdit *line0 = new QLineEdit();
+        line0->setText(QString::number(width() - 300));
+        QLineEdit *line1 = new QLineEdit();
+        line1->setText(QString::number(height() - 30));
         QIntValidator *validator = new QIntValidator(100, 1000, this);
-        Aline0->setValidator(validator);
-        Aline1->setValidator(validator);
-        layout->addWidget(Alabel0, 0, 0);
-        layout->addWidget(Aline0, 0, 1);
-        layout->addWidget(Aline1, 0, 2);
+        line0->setValidator(validator);
+        line1->setValidator(validator);
+        layout->addWidget(label0, 0, 0);
+        layout->addWidget(line0, 0, 1);
+        layout->addWidget(line1, 0, 2);
 
         //摄像机
-        QLabel *Blabel0 = new QLabel("摄像机位置：");
-        QLineEdit *Bline0 = new QLineEdit();
-        Bline0->setText(QString::number(camera.x()));
-        QLineEdit *Bline1 = new QLineEdit();
-        Bline1->setText(QString::number(camera.y()));
-        QLineEdit *Bline2 = new QLineEdit();
-        Bline2->setText(QString::number(camera.z()));
-        layout->addWidget(Blabel0, 1, 0);
-        layout->addWidget(Bline0, 1, 1);
-        layout->addWidget(Bline1, 1, 2);
-        layout->addWidget(Bline2, 1, 3);
-
-        QLabel *Blabel1 = new QLabel("摄像机方向：");
-        QLineEdit *Bline3 = new QLineEdit();
-        Bline3->setText(QString::number(viewDir.x()));
-        QLineEdit *Bline4 = new QLineEdit();
-        Bline4->setText(QString::number(viewDir.y()));
-        QLineEdit *Bline5 = new QLineEdit();
-        Bline5->setText(QString::number(viewDir.z()));
-        layout->addWidget(Blabel1, 2, 0);
-        layout->addWidget(Bline3, 2, 1);
-        layout->addWidget(Bline4, 2, 2);
-        layout->addWidget(Bline5, 2, 3);
+        QLabel *label1 = new QLabel("摄像机位置：");
+        QLineEdit *line2 = new QLineEdit();
+        line2->setText(QString::number(camera.x()));
+        QLineEdit *line3 = new QLineEdit();
+        line3->setText(QString::number(camera.y()));
+        QLineEdit *line4 = new QLineEdit();
+        line4->setText(QString::number(camera.z()));
+        layout->addWidget(label1, 1, 0);
+        layout->addWidget(line2, 1, 1);
+        layout->addWidget(line3, 1, 2);
+        layout->addWidget(line4, 1, 3);
 
         //光照
-        QLabel *Clabel0 = new QLabel("光照方向：");
-        QLineEdit *Cline0 = new QLineEdit();
-        Cline0->setText(QString::number(lightDir.x()));
-        QLineEdit *Cline1 = new QLineEdit();
-        Cline1->setText(QString::number(lightDir.y()));
-        QLineEdit *Cline2 = new QLineEdit();
-        Cline2->setText(QString::number(lightDir.z()));
-        layout->addWidget(Clabel0, 3, 0);
-        layout->addWidget(Cline0, 3, 1);
-        layout->addWidget(Cline1, 3, 2);
-        layout->addWidget(Cline2, 3, 3);
+        QLabel *label2 = new QLabel("光照方向：");
+        QLineEdit *line5 = new QLineEdit();
+        line5->setText(QString::number(lightDir.x()));
+        QLineEdit *line6 = new QLineEdit();
+        line6->setText(QString::number(lightDir.y()));
+        QLineEdit *line7 = new QLineEdit();
+        line7->setText(QString::number(lightDir.z()));
+        layout->addWidget(label2, 2, 0);
+        layout->addWidget(line5, 2, 1);
+        layout->addWidget(line6, 2, 2);
+        layout->addWidget(line7, 2, 3);
 
-        QLabel *Clabel1 = new QLabel("环境光强度：");
-        QLineEdit *Cline3 = new QLineEdit();
-        Cline3->setText(QString::number(ambient));
-        layout->addWidget(Clabel1, 4, 0);
-        layout->addWidget(Cline3, 4, 1);
+        QLabel *label3 = new QLabel("环境光强度：");
+        QLineEdit *line8 = new QLineEdit();
+        line8->setText(QString::number(ambient));
+        layout->addWidget(label3, 3, 0);
+        layout->addWidget(line8, 3, 1);
 
         //着色器
-        QLabel *Dlabel0 = new QLabel("着色器：");
+        QLabel *label4 = new QLabel("着色器：");
         QComboBox *comboBox = new QComboBox(this);
         comboBox->addItem("FlatShader");
         comboBox->addItem("GouraudShader");
@@ -91,13 +79,13 @@ ZeroRenderer::ZeroRenderer(QWidget *parent)
         comboBox->addItem("PhongShader");
         comboBox->addItem("BlinnPhongShader");
         comboBox->setCurrentIndex(4);
-        layout->addWidget(Dlabel0, 5, 0);
-        layout->addWidget(comboBox, 5, 1, 1, 2);
+        layout->addWidget(label4, 4, 0);
+        layout->addWidget(comboBox, 4, 1, 1, 2);
 
         //渲染按钮
         QPushButton *button = new QPushButton("渲染", this);
         connect(button, SIGNAL(clicked()), this, SLOT(reDraw()));
-        layout->addWidget(button, 6, 0, 1, 4);
+        layout->addWidget(button, 5, 0, 1, 4);
 
         this->addDockWidget(Qt::LeftDockWidgetArea, dockWidget);
     }
@@ -123,9 +111,8 @@ void ZeroRenderer::draw()
                 f = true;
             }
             camera = Vec3f(list[2]->text().toFloat(), list[3]->text().toFloat(), list[4]->text().toFloat());
-            viewDir = Vec3f(list[5]->text().toFloat(), list[6]->text().toFloat(), list[7]->text().toFloat());
-            lightDir = Vec3f(list[8]->text().toFloat(), list[9]->text().toFloat(), list[10]->text().toFloat());
-            ambient = list[11]->text().toFloat();
+            lightDir = Vec3f(list[5]->text().toFloat(), list[6]->text().toFloat(), list[7]->text().toFloat());
+            ambient = list[8]->text().toFloat();
         }
         QList<QComboBox*> list1 = dock->findChildren<QComboBox*>();
         if(!list1.empty()){
@@ -141,7 +128,6 @@ void ZeroRenderer::draw()
     for (int i = 0; i < w * h; i++) {
         zbuffer[i] = -std::numeric_limits<float>::max();
     }
-    viewDir.normalize();
     Matrix viewport = getViewport(w, h);
     Matrix projection = getProjection(w / h, fov, near, far);
     Matrix view = getView(camera, viewDir, Vec3f(0, 1.0f, 0));
