@@ -40,8 +40,8 @@ private:
     Vec3f center = Vec3f(0, 0, 0);
     Vec3f viewDir = center - camera;
     float ambient = 0.1f;
-    float near = 0.1f;
-    float far = 100.0f;
+    float near = -0.1f;
+    float far = -100.0f;
     float fov = 30.0f;
 
     TGAImage image;

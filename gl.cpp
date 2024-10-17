@@ -10,19 +10,37 @@ Matrix getViewport(int w, int h) {
 }
 
 Matrix getProjection(float aspect, float fov, float near, float far) {
-    Matrix Projection = Matrix::Identity();
-    Projection(0, 0) = 1 / (aspect * tan(fov / 2));
-    Projection(1, 1) = 1 / tan(fov / 2);
-    Projection(2, 2) = far / -(near - far);
-    Projection(2, 3) = (far * near) / (near - far);
-    Projection(3, 2) = 1;
-    Projection(3, 3) = 0;
-    return Projection;
+    Matrix projection = Matrix::Identity();
+
+    Matrix persp_to_ortho;         //公式中的persp->ortho矩阵
+    Matrix ortho;                  //ortho矩阵
+    float height = near*std::tan(fov/2) * 2;   //视锥体挤成立方体，立方体的高
+    float width = height * aspect;                                //立方体的宽
+
+    persp_to_ortho << near, 0, 0, 0,               //根据公式求得persp->ortho矩阵
+        0,near,0,0,
+        0,0,near + far,-near * far,
+        0,0,1,0;
+
+    ortho << 2.0/width , 0 ,0, 0,                   //根据公式求得ortho矩阵,这里直接将平移和缩放两步写在一起了
+        0, 2.0/height,0,0,
+        0,0,2.0/(near-far),-(near+far)/(near-far),
+        0,0,0,1;
+
+    projection = ortho * persp_to_ortho * projection;
+
+    return projection;
 }
 
 Matrix getView(Vec3f camera, Vec3f center, Vec3f up) {
     Vec3f z = camera - center;
-    Vec3f x = up.cross(z);
+    Vec3f x;
+    if(z.x() == 0 && z.z() == 0){
+        x = Vec3f(1, 0, 0);
+    }
+    else{
+        x = up.cross(z);
+    }
     Vec3f y = z.cross(x);
     x.normalize(); y.normalize(); z.normalize();
     Matrix r = Matrix::Identity();
@@ -109,8 +127,8 @@ void triangleBoundingBox(Vec3f* verts, Shader& shader, TGAImage& image, float* z
     for (int i = 0; i < 3; i++) {
         bboxmin.x() = std::max(0.0f, std::min(verts[i].x(), bboxmin.x()));
         bboxmin.y() = std::max(0.0f, std::min(verts[i].y(), bboxmin.y()));
-        bboxmax.x() = std::min(1.0f * image.get_width(), std::max(verts[i].x(), bboxmax.x()));
-        bboxmax.y() = std::min(1.0f * image.get_height(), std::max(verts[i].y(), bboxmax.y()));
+        bboxmax.x() = std::min(1.0f * image.get_width() - 1, std::max(verts[i].x(), bboxmax.x()));
+        bboxmax.y() = std::min(1.0f * image.get_height() - 1, std::max(verts[i].y(), bboxmax.y()));
     }
     for (int x = bboxmin.x(); x <= bboxmax.x(); x++) {
         for (int y = bboxmin.y(); y <= bboxmax.y(); y++) {

@@ -123,10 +123,6 @@ void ZeroRenderer::draw()
         w = width() - 300; h = height() - 30;
     }
 
-    if(camera.norm() < 1){
-        return;
-    }
-
     image = TGAImage(w, h, TGAImage::RGB);
     float* zbuffer = new float[w * h];
     for (int i = 0; i < w * h; i++) {
