@@ -99,6 +99,18 @@ ZeroRenderer::ZeroRenderer(QWidget *parent)
         connect(button, SIGNAL(clicked()), this, SLOT(reDraw()));
         layout->addWidget(button, 6, 0, 1, 4);
 
+        //设置小数限制
+        QDoubleValidator *dv = new QDoubleValidator(-100.0, 100.0, 2, this);  // 允许输入带2位小数的浮点数
+        Bline0->setValidator(dv);
+        Bline1->setValidator(dv);
+        Bline2->setValidator(dv);
+        Bline3->setValidator(dv);
+        Bline4->setValidator(dv);
+        Bline5->setValidator(dv);
+        Cline0->setValidator(dv);
+        Cline1->setValidator(dv);
+        Cline2->setValidator(dv);
+
         this->addDockWidget(Qt::LeftDockWidgetArea, dockWidget);
     }
 }
@@ -114,23 +126,24 @@ void ZeroRenderer::draw()
     bool f = false;
     int w = 100, h = 100, shaderType = 4;
     QDockWidget *dock = this->findChild<QDockWidget*>();
-    if(dock){
-        QList<QLineEdit*> list = dock->findChildren<QLineEdit*>();
-        if(!list.isEmpty()){
-            w = list[0]->text().toInt();
-            h = list[1]->text().toInt();
-            if(w != width() - 300 || h != height() - 30){
-                f = true;
-            }
-            camera = Vec3f(list[2]->text().toFloat(), list[3]->text().toFloat(), list[4]->text().toFloat());
-            viewDir = Vec3f(list[5]->text().toFloat(), list[6]->text().toFloat(), list[7]->text().toFloat());
-            lightDir = Vec3f(list[8]->text().toFloat(), list[9]->text().toFloat(), list[10]->text().toFloat());
-            ambient = list[11]->text().toFloat();
+    if(dock && !isActive){
+        lineEditList = dock->findChildren<QLineEdit*>();
+        comboBoxList = dock->findChildren<QComboBox*>();
+        isActive = true;
+    }
+    if(!lineEditList.isEmpty()){
+        w = lineEditList[0]->text().toInt();
+        h = lineEditList[1]->text().toInt();
+        if(w != width() - 300 || h != height() - 30){
+            f = true;
         }
-        QList<QComboBox*> list1 = dock->findChildren<QComboBox*>();
-        if(!list1.empty()){
-            shaderType = list1[0]->currentIndex();
-        }
+        camera = Vec3f(lineEditList[2]->text().toFloat(), lineEditList[3]->text().toFloat(), lineEditList[4]->text().toFloat());
+        viewDir = Vec3f(lineEditList[5]->text().toFloat(), lineEditList[6]->text().toFloat(), lineEditList[7]->text().toFloat());
+        lightDir = Vec3f(lineEditList[8]->text().toFloat(), lineEditList[9]->text().toFloat(), lineEditList[10]->text().toFloat());
+        ambient = lineEditList[11]->text().toFloat();
+    }
+    if(!comboBoxList.empty()){
+        shaderType = comboBoxList[0]->currentIndex();
     }
     else{
         w = width() - 300; h = height() - 30;
@@ -255,6 +268,72 @@ void ZeroRenderer::paintEvent(QPaintEvent *event)
             TGAColor c = image.get(i - 300, j - 30);
             painter.setPen(QColor(c[2], c[1], c[0]));
             painter.drawPoint(QPoint(i, j));
+        }
+    }
+}
+
+void ZeroRenderer::keyPressEvent(QKeyEvent *event) {
+    if(isActive){
+        if(event->key() == Qt::Key_W) {
+            lineEditList[2]->setText(QString::number(camera.x() + viewDir.x() / 10, 'f', 2));
+            lineEditList[3]->setText(QString::number(camera.y() + viewDir.y() / 10, 'f', 2));
+            lineEditList[4]->setText(QString::number(camera.z() + viewDir.z() / 10, 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_S) {
+            lineEditList[2]->setText(QString::number(camera.x() - viewDir.x() / 10, 'f', 2));
+            lineEditList[3]->setText(QString::number(camera.y() - viewDir.y() / 10, 'f', 2));
+            lineEditList[4]->setText(QString::number(camera.z() - viewDir.z() / 10, 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_A) {
+            Vec3f up(0, 1, 0);
+            Vec3f left = up.cross(viewDir);
+            lineEditList[2]->setText(QString::number(camera.x() + left.x() / 10, 'f', 2));
+            lineEditList[3]->setText(QString::number(camera.y() + left.y() / 10, 'f', 2));
+            lineEditList[4]->setText(QString::number(camera.z() + left.z() / 10, 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_D) {
+            Vec3f up(0, 1, 0);
+            Vec3f left = up.cross(viewDir);
+            lineEditList[2]->setText(QString::number(camera.x() - left.x() / 10, 'f', 2));
+            lineEditList[3]->setText(QString::number(camera.y() - left.y() / 10, 'f', 2));
+            lineEditList[4]->setText(QString::number(camera.z() - left.z() / 10, 'f', 2));
+            draw();
+        }
+
+        if(event->key() == Qt::Key_Up) {
+            viewDir.y() += 0.1f;
+            viewDir.normalize();
+            lineEditList[5]->setText(QString::number(viewDir.x(), 'f', 2));
+            lineEditList[6]->setText(QString::number(viewDir.y(), 'f', 2));
+            lineEditList[7]->setText(QString::number(viewDir.z(), 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_Down) {
+            viewDir.y() -= 0.1f;
+            viewDir.normalize();
+            lineEditList[5]->setText(QString::number(viewDir.x(), 'f', 2));
+            lineEditList[6]->setText(QString::number(viewDir.y(), 'f', 2));
+            lineEditList[7]->setText(QString::number(viewDir.z(), 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_Left) {
+            viewDir.x() -= 0.1f;
+            viewDir.normalize();
+            lineEditList[5]->setText(QString::number(viewDir.x(), 'f', 2));
+            lineEditList[6]->setText(QString::number(viewDir.y(), 'f', 2));
+            lineEditList[7]->setText(QString::number(viewDir.z(), 'f', 2));
+            draw();
+        }
+        if(event->key() == Qt::Key_Right) {
+            viewDir.x() += 0.1f;
+            viewDir.normalize();
+            lineEditList[5]->setText(QString::number(viewDir.x(), 'f', 2));
+            lineEditList[6]->setText(QString::number(viewDir.y(), 'f', 2));
+            lineEditList[7]->setText(QString::number(viewDir.z(), 'f', 2));
+            draw();
         }
     }
 }

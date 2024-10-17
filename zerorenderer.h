@@ -14,6 +14,8 @@
 #include <QIntValidator>
 #include <QPushButton>
 #include <QComboBox>
+#include <QKeyEvent>
+#include <QDoubleValidator>
 
 #include "tgaimage.h"
 #include "model.h"
@@ -32,6 +34,7 @@ protected:
     void draw();
     void addModel(QStringList filePaths);
     void paintEvent(QPaintEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     std::vector<Model*> models;
@@ -44,6 +47,10 @@ private:
     float fov = 30.0f;
 
     TGAImage image;
+
+    bool isActive = false;
+    QList<QLineEdit*> lineEditList;
+    QList<QComboBox*> comboBoxList;
 
 private slots:
     void openFile() {
