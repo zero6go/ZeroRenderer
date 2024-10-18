@@ -58,7 +58,7 @@ private:
 
 private slots:
     void openFile() {
-        QStringList filePaths = QFileDialog::getOpenFileNames(this, "打开文件", "", "obj (*.obj)");
+        QStringList filePaths = QFileDialog::getOpenFileNames(this, "打开模型文件", "", "obj (*.obj)");
         if (!filePaths.isEmpty()) {
             addModel(filePaths);
             draw();
@@ -66,6 +66,14 @@ private slots:
     }
     void reDraw(){
         draw();
+    }
+    void cleanModels(){
+        for(auto &m : models){
+            delete m;
+        }
+        models = std::vector<Model*>();
+        draw();
+        isActive = false;
     }
 };
 #endif // ZERORENDERER_H

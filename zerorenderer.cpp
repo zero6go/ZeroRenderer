@@ -12,6 +12,9 @@ ZeroRenderer::ZeroRenderer(QWidget *parent)
         QAction *openAction1 = new QAction(tr("打开"), this);
         fileMenu->addAction(openAction1);
         connect(openAction1, SIGNAL(triggered()), this, SLOT(openFile()));
+        QAction *openAction2 = new QAction(tr("清空模型"), this);
+        fileMenu->addAction(openAction2);
+        connect(openAction2, SIGNAL(triggered()), this, SLOT(cleanModels()));
 
         this->setMenuBar(menuBar);
     }
