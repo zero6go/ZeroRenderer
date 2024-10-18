@@ -16,6 +16,8 @@
 #include <QComboBox>
 #include <QKeyEvent>
 #include <QDoubleValidator>
+#include <QMouseEvent>
+#include <QWheelEvent>
 
 #include "tgaimage.h"
 #include "model.h"
@@ -35,11 +37,13 @@ protected:
     void addModel(QStringList filePaths);
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
 private:
     std::vector<Model*> models;
     Vec3f lightDir = Vec3f(0.3, -0.7, -1);
-    Vec3f camera = Vec3f(0.3, 0.3, 2);
+    Vec3f cameraPos = Vec3f(0, 0.5, 3);
     Vec3f viewDir = Vec3f(0, 0, -1);
     float ambient = 0.1f;
     float near = -0.1f;

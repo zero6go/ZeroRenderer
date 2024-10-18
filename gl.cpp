@@ -1,5 +1,5 @@
 #include "gl.h"
-#include <iostream>
+
 Matrix getViewport(int w, int h) {
     Matrix m = Matrix::Identity();
     m(0, 3) = w / 2.0;
@@ -32,8 +32,8 @@ Matrix getProjection(float aspect, float fov, float near, float far) {
     return projection;
 }
 
-Matrix getView(Vec3f camera, Vec3f viewDir, Vec3f up) {
-    Vec3f z = -viewDir;
+Matrix getView(Vec3f cameraPos, Vec3f up) {
+    Vec3f z = cameraPos;
     Vec3f x;
     if(z.x() == 0 && z.z() == 0){
         x = Vec3f(1, 0, 0);
@@ -49,9 +49,10 @@ Matrix getView(Vec3f camera, Vec3f viewDir, Vec3f up) {
         r(1, i) = y[i];
         r(2, i) = z[i];
     }
+
     Matrix t = Matrix::Identity();
     for (int i = 0; i < 3; i++) {
-        t(i, 3) = -camera[i];
+        t(i, 3) = -cameraPos[i];
     }
     Matrix res = r * t;
     return res;
