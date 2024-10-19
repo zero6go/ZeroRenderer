@@ -1,13 +1,13 @@
 #include "gl.h"
 
-Matrix getViewport(int w, int h) {
+Matrix getViewport(int w, int h, int d) {
     Matrix m = Matrix::Identity();
     m(0, 3) = w / 2.0;
     m(1, 3) = h / 2.0;
-    m(2, 3) = 255.0 / 2.0;
+    m(2, 3) = d / 2.0;
     m(0, 0) = w / 2.0;
     m(1, 1) = h / 2.0;
-    m(2, 2) = 255.0 / 2.0;
+    m(2, 2) = d / 2.0;
     return m;
 }
 

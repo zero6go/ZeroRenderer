@@ -3,7 +3,7 @@
 ZeroRenderer::ZeroRenderer(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->resize(1050, 780);
+    this->resize(1100, 830);
     //菜单栏
     {
         QMenuBar *menuBar = new QMenuBar(this);
@@ -139,17 +139,17 @@ void ZeroRenderer::draw()
     }
 
     //shadowbuffer
-    image = TGAImage(w, h, TGAImage::RGB);
-    float *shadowbuffer = new float[w * h];
-    for (int i = 0; i < w * h; i++) {
+    TGAImage lightImage = TGAImage(2000, 2000, TGAImage::RGB);
+    float *shadowbuffer = new float[2000 * 2000];
+    for (int i = 0; i < 2000 * 2000; i++) {
         shadowbuffer[i] = -std::numeric_limits<float>::max();
     }
-    Matrix viewport = getViewport(w, h);
-    Matrix projection = getProjection(w / h, fov, near, far);
+    Matrix lightViewport = getViewport(2000, 2000, 1000);
+    Matrix lightProjection = getProjection(1, fov, near, far);
     Matrix lightView = getView(-lightDir * 2, Vec3f(0, 1, 0));
-    Matrix shadowMVP = viewport * projection * lightView;
+    Matrix shadowMVP = lightViewport * lightProjection * lightView;
     for(int idx = 0; idx < models.size(); idx++){
-        Shader *shader = new ShadowShader(viewport, projection, lightView);
+        Shader *shader = new ShadowShader(lightViewport, lightProjection, lightView);
         for (int i = 0; i < models[idx]->nfaces(); i++) {
             Vec3f screenCoords[3];
             for (int j = 0; j < 3; j++) {
@@ -158,7 +158,7 @@ void ZeroRenderer::draw()
                 Vec3f normal = models[idx]->normal(i, j);
                 screenCoords[j] = shader->vertex(v, uv, normal, j);
             }
-            triangleBoundingBox(screenCoords, shader, image, shadowbuffer);
+            triangleBoundingBox(screenCoords, shader, lightImage, shadowbuffer);
         }
         std::cout << "Shadow " << idx << " Completed!" << std::endl;
         delete shader;
@@ -170,6 +170,8 @@ void ZeroRenderer::draw()
     for (int i = 0; i < w * h; i++) {
         zbuffer[i] = -std::numeric_limits<float>::max();
     }
+    Matrix viewport = getViewport(w, h, 1000);
+    Matrix projection = getProjection(w / h, fov, near, far);
     Matrix view = getView(cameraPos, Vec3f(0, 1, 0));
     viewDir = -cameraPos;
     viewDir.normalize();

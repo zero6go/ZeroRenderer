@@ -107,7 +107,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
 
         Vec3f normal = (v[1] - v[0]).cross(v[2] - v[0]);
         normal.normalize();
@@ -139,6 +139,7 @@ public:
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
         this->uv[idx] = uv;
         this->normal[idx] = normal;
+        this->v[idx] = modelVertex;
 
         Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
         screenCoords[idx] = screenCoord;
@@ -154,7 +155,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
 
         float intensity[3];
         for (int i = 0; i < 3; i++) {
@@ -188,12 +189,24 @@ public:
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
         this->uv[idx] = uv;
         this->normal[idx] = normal;
+        this->v[idx] = modelVertex;
 
         Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
         screenCoords[idx] = screenCoord;
         return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
+        //计算当前点在光线视角下的位置
+        Vec4f P(0, 0, 0, 1);
+        for(int i = 0; i < 3; i++){
+            P.x() += v[i].x() * bc[i];
+            P.y() += v[i].y() * bc[i];
+            P.z() += v[i].z() * bc[i];
+        }
+        P = shadowMVP * P;
+        P /= P[3];
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+
         float intensity[3];
         float intensityP = 0;
         for (int i = 0; i < 3; i++) {
@@ -205,7 +218,7 @@ public:
         else if (intensityP > .45) intensityP = .60;
         else if (intensityP > .30) intensityP = .45;
         else if (intensityP > .15) intensityP = .30;
-        color = TGAColor(255, 105, 180) * intensityP;
+        color = TGAColor(255, 105, 180) * intensityP * shadow;
         return false ? intensityP > 0:intensityP <= 0;
     }
 };
@@ -249,7 +262,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
 
         Vec3f normalP;
         Vec2i uvP(0, 0);
@@ -325,7 +338,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
 
         Vec3f normalP;
         Vec2i uvP(0, 0);
