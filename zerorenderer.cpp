@@ -112,6 +112,7 @@ ZeroRenderer::~ZeroRenderer() {
 
 void ZeroRenderer::draw()
 {
+    //读取GUI数据
     bool f = false;
     int w = 100, h = 100, shaderType = 4;
     QDockWidget *dock = this->findChild<QDockWidget*>();
@@ -137,13 +138,38 @@ void ZeroRenderer::draw()
         w = width() - 300; h = height() - 30;
     }
 
+    //shadowbuffer
+    image = TGAImage(w, h, TGAImage::RGB);
+    float *shadowbuffer = new float[w * h];
+    for (int i = 0; i < w * h; i++) {
+        shadowbuffer[i] = -std::numeric_limits<float>::max();
+    }
+    Matrix viewport = getViewport(w, h);
+    Matrix projection = getProjection(w / h, fov, near, far);
+    Matrix lightView = getView(-lightDir * 2, Vec3f(0, 1, 0));
+    Matrix shadowMVP = viewport * projection * lightView;
+    for(int idx = 0; idx < models.size(); idx++){
+        Shader *shader = new ShadowShader(viewport, projection, lightView);
+        for (int i = 0; i < models[idx]->nfaces(); i++) {
+            Vec3f screenCoords[3];
+            for (int j = 0; j < 3; j++) {
+                Vec3f v = models[idx]->vert(i, j);
+                Vec2i uv = models[idx]->uv(i, j);
+                Vec3f normal = models[idx]->normal(i, j);
+                screenCoords[j] = shader->vertex(v, uv, normal, j);
+            }
+            triangleBoundingBox(screenCoords, shader, image, shadowbuffer);
+        }
+        std::cout << "Shadow " << idx << " Completed!" << std::endl;
+        delete shader;
+    }
+
+    //正式渲染
     image = TGAImage(w, h, TGAImage::RGB);
     float* zbuffer = new float[w * h];
     for (int i = 0; i < w * h; i++) {
         zbuffer[i] = -std::numeric_limits<float>::max();
     }
-    Matrix viewport = getViewport(w, h);
-    Matrix projection = getProjection(w / h, fov, near, far);
     Matrix view = getView(cameraPos, Vec3f(0, 1, 0));
     viewDir = -cameraPos;
     viewDir.normalize();
@@ -153,87 +179,49 @@ void ZeroRenderer::draw()
         TGAImage specularMap = models[idx]->getSpecular();
         TGAImage normalMap = models[idx]->getNormal();
 
+        Shader *shader;
         switch(shaderType){
             case 0:{
-                FlatShader shader(viewport, projection, view, lightDir, texture);
-                for (int i = 0; i < models[idx]->nfaces(); i++) {
-                    Vec3f screenCoords[3];
-                    for (int j = 0; j < 3; j++) {
-                        Vec3f v = models[idx]->vert(i, j);
-                        Vec2i uv = models[idx]->uv(i, j);
-                        Vec3f normal = models[idx]->normal(i, j);
-                        screenCoords[j] = shader.vertex(v, uv, normal, j);
-                    }
-                    triangleBoundingBox(screenCoords, shader, image, zbuffer);
-                }
-                std::cout << "Completed!" << std::endl;
+                shader = new FlatShader(viewport, projection, view, lightDir, texture, shadowbuffer, shadowMVP, w);
                 break;
             }
             case 1:{
-                GouraudShader shader(viewport, projection, view, lightDir, texture);
-                for (int i = 0; i < models[idx]->nfaces(); i++) {
-                    Vec3f screenCoords[3];
-                    for (int j = 0; j < 3; j++) {
-                        Vec3f v = models[idx]->vert(i, j);
-                        Vec2i uv = models[idx]->uv(i, j);
-                        Vec3f normal = models[idx]->normal(i, j);
-                        screenCoords[j] = shader.vertex(v, uv, normal, j);
-                    }
-                    triangleBoundingBox(screenCoords, shader, image, zbuffer);
-                }
-                std::cout << "Completed!" << std::endl;
+                shader = new GouraudShader(viewport, projection, view, lightDir, texture, shadowbuffer, shadowMVP, w);
                 break;
             }
             case 2:{
-                ToonShader shader(viewport, projection, view, lightDir);
-                for (int i = 0; i < models[idx]->nfaces(); i++) {
-                    Vec3f screenCoords[3];
-                    for (int j = 0; j < 3; j++) {
-                        Vec3f v = models[idx]->vert(i, j);
-                        Vec2i uv = models[idx]->uv(i, j);
-                        Vec3f normal = models[idx]->normal(i, j);
-                        screenCoords[j] = shader.vertex(v, uv, normal, j);
-                    }
-                    triangleBoundingBox(screenCoords, shader, image, zbuffer);
-                }
-                std::cout << "Completed!" << std::endl;
+                shader = new ToonShader(viewport, projection, view, lightDir, shadowbuffer, shadowMVP, w);
                 break;
             }
             case 3:{
-                PhongShader shader(viewport, projection, view, lightDir, texture, ambient, viewDir, specularMap, 64.0f, normalMap);
-                for (int i = 0; i < models[idx]->nfaces(); i++) {
-                    Vec3f screenCoords[3];
-                    for (int j = 0; j < 3; j++) {
-                        Vec3f v = models[idx]->vert(i, j);
-                        Vec2i uv = models[idx]->uv(i, j);
-                        Vec3f normal = models[idx]->normal(i, j);
-                        screenCoords[j] = shader.vertex(v, uv, normal, j);
-                    }
-                    triangleBoundingBox(screenCoords, shader, image, zbuffer);
-                }
-                std::cout << "Completed!" << std::endl;
+                shader = new PhongShader(viewport, projection, view, lightDir, texture, ambient, viewDir, specularMap,
+                                         64.0f, normalMap, shadowbuffer, shadowMVP, w);
                 break;
             }
             case 4:{
-                BlinnPhongShader shader(viewport, projection, view, lightDir, texture, ambient, viewDir, specularMap, 64.0f, normalMap);
-                for (int i = 0; i < models[idx]->nfaces(); i++) {
-                    Vec3f screenCoords[3];
-                    for (int j = 0; j < 3; j++) {
-                        Vec3f v = models[idx]->vert(i, j);
-                        Vec2i uv = models[idx]->uv(i, j);
-                        Vec3f normal = models[idx]->normal(i, j);
-                        screenCoords[j] = shader.vertex(v, uv, normal, j);
-                    }
-                    triangleBoundingBox(screenCoords, shader, image, zbuffer);
-                }
-                std::cout << "Completed!" << std::endl;
+                shader = new BlinnPhongShader(viewport, projection, view, lightDir, texture, ambient, viewDir,
+                                              specularMap, 64.0f, normalMap, shadowbuffer, shadowMVP, w);
                 break;
             }
         }
+        for (int i = 0; i < models[idx]->nfaces(); i++) {
+            Vec3f screenCoords[3];
+            for (int j = 0; j < 3; j++) {
+                Vec3f v = models[idx]->vert(i, j);
+                Vec2i uv = models[idx]->uv(i, j);
+                Vec3f normal = models[idx]->normal(i, j);
+                screenCoords[j] = shader->vertex(v, uv, normal, j);
+            }
+            triangleBoundingBox(screenCoords, shader, image, zbuffer);
+        }
+        std::cout << "Model " << idx << " Completed!" << std::endl;
+        delete shader;
     }
+    std::cout<<std::endl;
 
     image.flip_vertically();
     delete[] zbuffer;
+    delete[] shadowbuffer;
 
     if(f) this->resize(w + 300, h + 30);
     else repaint();

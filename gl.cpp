@@ -4,8 +4,10 @@ Matrix getViewport(int w, int h) {
     Matrix m = Matrix::Identity();
     m(0, 3) = w / 2.0;
     m(1, 3) = h / 2.0;
+    m(2, 3) = 255.0 / 2.0;
     m(0, 0) = w / 2.0;
     m(1, 1) = h / 2.0;
+    m(2, 2) = 255.0 / 2.0;
     return m;
 }
 
@@ -122,7 +124,7 @@ Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
     return Vec3f(-1, 1, 1);
 }
 
-void triangleBoundingBox(Vec3f* verts, Shader& shader, TGAImage& image, float* zbuffer) {
+void triangleBoundingBox(Vec3f* verts, Shader* shader, TGAImage& image, float* zbuffer) {
     for (int i = 0; i < 3; i++){
         if (verts[i].z() < -1){
             return;
@@ -148,7 +150,7 @@ void triangleBoundingBox(Vec3f* verts, Shader& shader, TGAImage& image, float* z
             if (zbuffer[(int)(P.x() + P.y() * width)] < P.z()) {
                 zbuffer[(int)(P.x() + P.y() * width)] = P.z();
                 TGAColor color;
-                bool discard = shader.fragment(bc, color);
+                bool discard = shader->fragment(bc, color);
                 if (!discard)
                     image.set(P.x(), P.y(), color);
                 else

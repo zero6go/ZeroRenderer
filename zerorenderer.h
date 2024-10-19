@@ -42,8 +42,8 @@ protected:
 
 private:
     std::vector<Model*> models;
-    Vec3f lightDir = Vec3f(0.3, -0.7, -1);
-    Vec3f cameraPos = Vec3f(0, 0.5, 3);
+    Vec3f lightDir = Vec3f(0.5, -0.5, -1);
+    Vec3f cameraPos = Vec3f(0.5, 0.5, 3);
     Vec3f viewDir = Vec3f(0, 0, -1);
     float ambient = 0.1f;
     float near = -0.1f;

@@ -3,12 +3,33 @@
 #include <Eigen/Dense>
 #include "tgaimage.h"
 #include "model.h"
+#include <iostream>
 
 typedef Eigen::Matrix4f Matrix;
 typedef Eigen::Vector3f Vec3f;
+typedef Eigen::Vector4f Vec4f;
 typedef Eigen::Vector2i Vec2i;
 
 class Shader {
+protected:
+    Matrix viewport;
+    Matrix projection;
+    Matrix view;
+    Vec3f normal[3];
+    Vec2i uv[3];
+    Vec3f lightDir;
+    TGAImage texture;
+    Vec3f screenCoords[3];
+
+    int width;
+    float ambient;
+    Vec3f viewDir;
+    TGAImage specularMap;
+    float shininess;
+    TGAImage normalMap;
+    Vec3f v[3];
+    float *shadowbuffer;
+    Matrix shadowMVP;
 public:
     //计算并返回MVP变换后的顶点在屏幕上的坐标，同时计算片元着色器所需的数据
     virtual Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) = 0;
@@ -55,32 +76,39 @@ public:
 };
 
 class FlatShader :public Shader {
-private:
-    Matrix viewport;
-    Matrix projection;
-    Matrix view;
-    Vec3f v[3];
-    Vec2i uv[3];
-    Vec3f lightDir;
-    TGAImage texture;
 public:
-    FlatShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture) {
+    FlatShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float *shadowbuffer,
+               Matrix shadowMVP, int width) {
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
         this->lightDir = lightDir.normalized();
         this->texture = texture;
+        this->shadowbuffer = shadowbuffer;
+        this->shadowMVP = shadowMVP;
+        this->width = width;
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
         this->uv[idx] = uv;
         this->v[idx] = modelVertex;
 
-        Vec3f gl_Pos;
-        gl_Pos = mvp(viewport, projection, view, modelVertex);
-        return gl_Pos;
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
+        //计算当前点在光线视角下的位置
+        Vec4f P(0, 0, 0, 1);
+        for(int i = 0; i < 3; i++){
+            P.x() += v[i].x() * bc[i];
+            P.y() += v[i].y() * bc[i];
+            P.z() += v[i].z() * bc[i];
+        }
+        P = shadowMVP * P;
+        P /= P[3];
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+
         Vec3f normal = (v[1] - v[0]).cross(v[2] - v[0]);
         normal.normalize();
         Vec2i uvP(0, 0);
@@ -89,38 +117,45 @@ public:
             uvP.x() += uv[i].x() * bc[i];
             uvP.y() += uv[i].y() * bc[i];
         }
-        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP);
+        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP * shadow);
         return false ? intensityP > 0:intensityP <= 0;
     }
 };
 
 class GouraudShader :public Shader {
-private:
-    Matrix viewport;
-    Matrix projection;
-    Matrix view;
-    Vec3f normal[3];
-    Vec2i uv[3];
-    Vec3f lightDir;
-    TGAImage texture;
 public:
-    GouraudShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture) {
+    GouraudShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float *shadowbuffer,
+                  Matrix shadowMVP, int width) {
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
         this->lightDir = lightDir.normalized();
         this->texture = texture;
+        this->shadowbuffer = shadowbuffer;
+        this->shadowMVP = shadowMVP;
+        this->width = width;
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
         this->uv[idx] = uv;
         this->normal[idx] = normal;
 
-        Vec3f gl_Pos;
-        gl_Pos = mvp(viewport, projection, view, modelVertex);
-        return gl_Pos;
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
+        //计算当前点在光线视角下的位置
+        Vec4f P(0, 0, 0, 1);
+        for(int i = 0; i < 3; i++){
+            P.x() += v[i].x() * bc[i];
+            P.y() += v[i].y() * bc[i];
+            P.z() += v[i].z() * bc[i];
+        }
+        P = shadowMVP * P;
+        P /= P[3];
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+
         float intensity[3];
         for (int i = 0; i < 3; i++) {
             intensity[i] = -(lightDir.dot(normal[i]));
@@ -132,34 +167,31 @@ public:
             uvP.y() += uv[i].y() * bc[i];
             intensityP += intensity[i] * bc[i];
         }
-        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP);
+        for (int i = 0; i < 3; i++) color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * intensityP * shadow);
         return false ? intensityP > 0:intensityP <= 0;
     }
 };
 
 class ToonShader :public Shader {
-private:
-    Matrix viewport;
-    Matrix projection;
-    Matrix view;
-    Vec3f normal[3];
-    Vec2i uv[3];
-    Vec3f lightDir;
 public:
-    ToonShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir) {
+    ToonShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, float *shadowbuffer, Matrix shadowMVP,
+               int width) {
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
         this->lightDir = lightDir.normalized();
+        this->shadowbuffer = shadowbuffer;
+        this->shadowMVP = shadowMVP;
+        this->width = width;
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
         this->uv[idx] = uv;
         this->normal[idx] = normal;
 
-        Vec3f gl_Pos;
-        gl_Pos = mvp(viewport, projection, view, modelVertex);
-        return gl_Pos;
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
         float intensity[3];
@@ -179,23 +211,10 @@ public:
 };
 
 class PhongShader :public Shader {
-private:
-    Matrix viewport;
-    Matrix projection;
-    Matrix view;
-    Vec3f normal[3];
-    Vec2i uv[3];
-    Vec3f lightDir;
-    TGAImage texture;
-
-    float ambient;
-    Vec3f viewDir;
-    TGAImage specularMap;
-    float shininess;
-    TGAImage normalMap;
-    Vec3f v[3];
 public:
-    PhongShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float ambient, Vec3f viewDir, TGAImage& specularMap, float shininess, TGAImage& normalMap) {
+    PhongShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float ambient,
+                Vec3f viewDir, TGAImage& specularMap, float shininess, TGAImage& normalMap, float *shadowbuffer,
+                Matrix shadowMVP, int width) {
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
@@ -206,6 +225,9 @@ public:
         this->specularMap = specularMap;
         this->shininess = shininess;
         this->normalMap = normalMap;
+        this->shadowbuffer = shadowbuffer;
+        this->shadowMVP = shadowMVP;
+        this->width = width;
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
@@ -213,11 +235,22 @@ public:
         this->normal[idx] = normal;
         this->v[idx] = modelVertex;
 
-        Vec3f gl_Pos;
-        gl_Pos = mvp(viewport, projection, view, modelVertex);
-        return gl_Pos;
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
+        //计算当前点在光线视角下的位置
+        Vec4f P(0, 0, 0, 1);
+        for(int i = 0; i < 3; i++){
+            P.x() += v[i].x() * bc[i];
+            P.y() += v[i].y() * bc[i];
+            P.z() += v[i].z() * bc[i];
+        }
+        P = shadowMVP * P;
+        P /= P[3];
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+
         Vec3f normalP;
         Vec2i uvP(0, 0);
         Vec3f n(0, 0, 0);
@@ -247,29 +280,17 @@ public:
         reflectDir.normalize();
         float specular = 0.6 * pow(std::max(0.0f, reflectDir.dot(viewDir)), shininess);
         for (int i = 0; i < 3; i++)
-            color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse) + specularMap.get(uvP.x(), uvP.y())[i] * specular);
+            color[i] = std::min(255.0f, shadow * (texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse)
+                                                  + specularMap.get(uvP.x(), uvP.y())[i] * specular));
         return false;
     }
 };
 
 class BlinnPhongShader :public Shader {
-private:
-    Matrix viewport;
-    Matrix projection;
-    Matrix view;
-    Vec3f normal[3];
-    Vec2i uv[3];
-    Vec3f lightDir;
-    TGAImage texture;
-
-    float ambient;
-    Vec3f viewDir;
-    TGAImage specularMap;
-    float shininess;
-    TGAImage normalMap;
-    Vec3f v[3];
 public:
-    BlinnPhongShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float ambient, Vec3f viewDir, TGAImage& specularMap, float shininess, TGAImage& normalMap) {
+    BlinnPhongShader(Matrix viewport, Matrix projection, Matrix view, Vec3f lightDir, TGAImage& texture, float ambient,
+                     Vec3f viewDir, TGAImage& specularMap, float shininess, TGAImage& normalMap, float *shadowbuffer,
+                     Matrix shadowMVP, int width) {
         this->viewport = viewport;
         this->projection = projection;
         this->view = view;
@@ -280,6 +301,9 @@ public:
         this->specularMap = specularMap;
         this->shininess = shininess;
         this->normalMap = normalMap;
+        this->shadowbuffer = shadowbuffer;
+        this->shadowMVP = shadowMVP;
+        this->width = width;
     }
 
     Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
@@ -287,11 +311,22 @@ public:
         this->normal[idx] = normal;
         this->v[idx] = modelVertex;
 
-        Vec3f gl_Pos;
-        gl_Pos = mvp(viewport, projection, view, modelVertex);
-        return gl_Pos;
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
     }
     bool fragment(Vec3f bc, TGAColor& color) {
+        //计算当前点在光线视角下的位置
+        Vec4f P(0, 0, 0, 1);
+        for(int i = 0; i < 3; i++){
+            P.x() += v[i].x() * bc[i];
+            P.y() += v[i].y() * bc[i];
+            P.z() += v[i].z() * bc[i];
+        }
+        P = shadowMVP * P;
+        P /= P[3];
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 15);
+
         Vec3f normalP;
         Vec2i uvP(0, 0);
         Vec3f n(0, 0, 0);
@@ -323,7 +358,31 @@ public:
         Vec3f half = (lightDir + viewDir).normalized();
         float specular = 0.5 * pow(std::max(0.0f, -(half.dot(normalP))), shininess);
         for (int i = 0; i < 4; i++)
-            color[i] = std::min(255.0f, texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse) + specularMap.get(uvP.x(), uvP.y())[i] * specular);
+            color[i] = std::min(255.0f, shadow * (texture.get(uvP.x(), uvP.y())[i] * (ambient + diffuse)
+                                                  + specularMap.get(uvP.x(), uvP.y())[i] * specular));
+        return false;
+    }
+};
+
+class ShadowShader :public Shader {
+public:
+    ShadowShader(Matrix viewport, Matrix projection, Matrix view){
+        this->viewport = viewport;
+        this->projection = projection;
+        this->view = view;
+    }
+
+    Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) {
+        Vec3f screenCoord = mvp(viewport, projection, view, modelVertex);
+        screenCoords[idx] = screenCoord;
+        return screenCoord;
+    }
+    bool fragment(Vec3f bc, TGAColor& color) {
+        Vec3f P(0, 0, 0);
+        for(int i = 0; i < 3; i++){
+            P.z() += screenCoords[i].z() * bc[i];
+        }
+        color = TGAColor(255, 255, 255) * (P.z() / 100.0f);
         return false;
     }
 };
