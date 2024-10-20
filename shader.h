@@ -31,6 +31,8 @@ protected:
     float *shadowbuffer;
     Matrix shadowMVP;
 public:
+    virtual ~Shader(){}
+
     //计算并返回MVP变换后的顶点在屏幕上的坐标，同时计算片元着色器所需的数据
     virtual Vec3f vertex(Vec3f modelVertex, Vec2i uv, Vec3f normal, int idx) = 0;
     //计算片元颜色，判断是否需要渲染
