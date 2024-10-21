@@ -109,7 +109,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 50);
 
         Vec3f normal = (v[1] - v[0]).cross(v[2] - v[0]);
         normal.normalize();
@@ -157,7 +157,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 50);
 
         float intensity[3];
         for (int i = 0; i < 3; i++) {
@@ -207,7 +207,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 50);
 
         float intensity[3];
         float intensityP = 0;
@@ -264,7 +264,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 50);
 
         Vec3f normalP;
         Vec2i uvP(0, 0);
@@ -340,7 +340,7 @@ public:
         }
         P = shadowMVP * P;
         P /= P[3];
-        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2]);
+        float shadow=0.3 + 0.7 * (shadowbuffer[(int)(P.x() + P.y() * width)] < P[2] + 50);
 
         Vec3f normalP;
         Vec2i uvP(0, 0);
